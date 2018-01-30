@@ -1,0 +1,4 @@
+---
+- include_vars: zfs.yml
+
+- zfs: '{{ zfsprops }}'

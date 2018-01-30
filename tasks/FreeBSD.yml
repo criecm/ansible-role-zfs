@@ -1,0 +1,14 @@
+---
+- name: rc.conf
+  lineinfile:
+    dest: /etc/rc.conf
+    line: 'zfs_enable="YES"'
+    regexp: '^zfs_enable='
+    state: present
+
+- name: rc.conf
+  service:
+    name: zfsd
+    enabled: yes
+    state: started
+

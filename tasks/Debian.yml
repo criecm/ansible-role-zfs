@@ -1,0 +1,6 @@
+---
+- name: install zol
+  apt:
+    name: zfsutils-linux
+    state: present
+

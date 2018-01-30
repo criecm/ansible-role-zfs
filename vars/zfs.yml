@@ -1,0 +1,10 @@
+---
+props: '{{ zfs.zfsprops | default({}) }}'
+
+default_props:
+  mountpoint: '{{ zfs.path | default(omit) }}'
+  volsize: '{{ zfs.volsize | default(omit) }}'
+  name: '{{ zfs.zfsrc | mandatory }}'
+  state: present
+
+zfsprops: '{{ default_props | combine(props) }}'

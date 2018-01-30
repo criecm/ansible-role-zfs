@@ -1,0 +1,3 @@
+---
+# defaults file for criecm.zfs
+zfs_sync_vol: /root/zfs_sync_vol

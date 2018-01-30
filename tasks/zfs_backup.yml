@@ -1,0 +1,79 @@
+---
+# !!! ces taches sont executees par {{ backup_host }} !!!
+#    {{ inventory_hostname }} est l'hote d'origine
+#
+# replication
+# needs zfs_sync_vol script on backup host
+- name: ssh key
+  command: 'ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa_{{ ansible_hostname }}'
+  args:
+    creates: '~/.ssh/id_rsa_{{ ansible_hostname }}'
+
+- name: get ssh key
+  command: 'cat ~/.ssh/id_rsa_{{ ansible_hostname }}.pub'
+  check_mode: False
+  changed_when: False
+  register: zfssh_key
+
+- name: has server backup's ssh key ?
+  command: 'fgrep {{ zfssh_key.stdout | regex_replace("ssh-[a-z0-9]* ([^ ]*)( .*)?$","\1") }} ~root/.ssh/authorized_keys'
+  changed_when: False
+  check_mode: False
+  failed_when: False
+  delegate_to: '{{ inventory_hostname }}'
+  register: sshalready
+
+- name: put backup ssh key on host (tmp)
+  authorized_key:
+    key: '{{ zfssh_key.stdout }}'
+    user: root
+    state: present
+#    key_options: 'from="{{ first_ssh.stdout_lines[0] | regex_replace("\.$","") }},{{ ansible_hostname }}"'
+  when: zfssh_key.stdout_lines > 0 and sshalready.rc > 0
+# and first_ssh.stdout_lines > 0
+  delegate_to: '{{ inventory_hostname }}'
+
+- name: make first ssh connection from backup (known_hosts + get client IP)
+  command: |
+    ssh -i ~/.ssh/id_rsa_{{ ansible_hostname }} -oStrictHostKeyChecking=no -oIdentitiesOnly=yes -oKbdInteractiveAuthentication=no -oUpdateHostKeys=yes {{ inventory_hostname }} 'echo ${SSH_CLIENT%% *}'
+  register: first_ssh
+  check_mode: False
+  changed_when: False
+  failed_when: first_ssh.stdout_lines | count == 0
+
+- name: put backup ssh key on host with 'from='
+  authorized_key:
+    key: '{{ zfssh_key.stdout }}'
+    user: root
+    state: present
+    key_options: 'from="{{ first_ssh.stdout_lines[0] | regex_replace("\.$","") }},{{ backup_host }}"'
+  when: zfssh_key.stdout_lines > 0 and first_ssh.stdout_lines > 0
+  delegate_to: '{{ inventory_hostname }}'
+
+- name: check zfs_sync_vol
+  stat:
+    path: '{{ zfs_sync_vol | default("/root/zfs_sync_vol") }}'
+  register: statzsv
+
+- block:
+  - name: install zfs_sync_vol if needed
+    fetch:
+      dest: /root/zfs_sync_vol
+      src: https://github.com/criecm/savscript/raw/master/lib/zfs_sync_vol
+  - name: chmod +x
+    file:
+      path: /root/zfs_sync_vol
+      mode: '0755'
+  when: not statzsv.stat.exists
+
+- name: install zfs_sync crontab
+  cron:
+    name: 'backup {{ zfs.zfsrc }} from {{ inventory_hostname }}'
+    job: '{{ zfs_sync_vol | default("/root/zfs_sync_vol") }} -k ~/.ssh/id_rsa_{{ ansible_hostname }} -BRIC -uU {{ zfs.zfsrc }}@{{ ansible_hostname }} {{ zfs.backup_on | regex_replace("@.*$","") }} >> /var/log/zfs_sync_{{ zfs.zfsrc | regex_replace("/","_") }}.log 2>&1'
+    minute: '{{ zfs.backup_minute | default( 59 | random(seed=zfs.zfsrc)) }}'
+    hour: '{{ zfs.backup_hour | default("*") }}'
+  with_items: '{{ shares | selectattr("zfsrc","defined") | selectattr("backup_on","search","@"+backup_host+"$") | list }}'
+  loop_control:
+    loop_var: zfs
+    label: '{{ zfs.zfsrc }}@{{ backup_host }}'
+
