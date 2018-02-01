@@ -1,6 +1,6 @@
 galaxy_info:
   author: Geoffroy Desvernay
-  description: yet another sysadmin
+  description: simple ZFS role
   company: Ecole Centrale Marseille
 
   # If the issue tracker for your role is not on github, uncomment the
