@@ -66,13 +66,16 @@
       mode: '0755'
   when: not statzsv.stat.exists
 
+- debug:
+    msg: '{{ shares | selectattr("zfsrc","defined") | selectattr("backup_on","defined") | selectattr("backup_on","search","@"+backup_host+"$") | map(attribute="zfsrc") | join(",") }}'
+
 - name: install zfs_sync crontab
   cron:
     name: 'backup {{ zfs.zfsrc }} from {{ inventory_hostname }}'
     job: '{{ zfs_sync_vol | default("/root/zfs_sync_vol") }} -k ~/.ssh/id_rsa_{{ ansible_hostname }} -BRIC -uU {{ zfs.zfsrc }}@{{ ansible_hostname }} {{ zfs.backup_on | regex_replace("@.*$","") }} >> /var/log/zfs_sync_{{ zfs.zfsrc | regex_replace("/","_") }}.log 2>&1'
     minute: '{{ zfs.backup_minute | default( 59 | random(seed=zfs.zfsrc)) }}'
     hour: '{{ zfs.backup_hour | default("*") }}'
-  with_items: '{{ shares | selectattr("zfsrc","defined") | selectattr("backup_on","search","@"+backup_host+"$") | list }}'
+  with_items: '{{ shares | selectattr("zfsrc","defined") | selectattr("backup_on","defined") | selectattr("backup_on","search","@"+backup_host) | list }}'
   loop_control:
     loop_var: zfs
     label: '{{ zfs.zfsrc }}@{{ backup_host }}'
