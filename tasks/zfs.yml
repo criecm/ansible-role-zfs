@@ -1,4 +1,9 @@
 ---
 - include_vars: zfs.yml
 
-- zfs: '{{ zfsprops }}'
+- zfs:
+    name: '{{ zfs.zfsrc }}'
+    state: present
+    origin: '{{ zfs.origin | default(omit) }}'
+    extra_zfs_properties: '{{ zfsprops }}'
+  when: zfs.state != "absent"
