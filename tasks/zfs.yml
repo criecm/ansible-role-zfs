@@ -6,4 +6,4 @@
     state: present
     origin: '{{ zfs.origin | default(omit) }}'
     extra_zfs_properties: '{{ zfsprops }}'
-  when: zfs.state != "absent"
+  when: zfs.state | default("present") != "absent"
