@@ -2,8 +2,6 @@
 props: '{{ zfs.zfsprops | default({}) }}'
 
 default_props:
-  name: '{{ zfs.zfsrc | mandatory }}'
-  origin: '{{ zfs.origin | default(omit) }}'
   mountpoint: '{{ zfs.path | default(omit) }}'
 
 zfsprops: '{{ default_props | combine(props) }}'

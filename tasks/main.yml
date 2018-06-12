@@ -24,8 +24,6 @@
   tags: zfs,replication
   register: replhosts
 
-- debug: var=replhosts
-
 - name: zfs shares
   include_tasks: zfs.yml
   with_items: '{{ shares | selectattr("zfsrc","defined") | list }}'
