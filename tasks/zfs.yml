@@ -1,4 +1,9 @@
 ---
+- name: stat dir
+  stat:
+    path: '{{ zfs.path }}'
+  register: dirstat
+
 - include_vars: zfs.yml
 
 - name: 'zfs {{ zfs.zfsrc }}'
@@ -7,3 +12,8 @@
     state: present
     origin: '{{ zfs.origin | default(omit) }}'
     extra_zfs_properties: '{{ zfsprops }}'
+  register: newzfs
+
+- name: restore from backup
+  command: '{{ zfs_sync_vol }} -BRCzs {{ zfs.backup_on }} {{ zfs.zfsrc }}'
+  when: restore and "backup_on" in zfs and ( not dirstat.stat.exists or newzfs.changed )

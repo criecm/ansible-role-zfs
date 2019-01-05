@@ -22,6 +22,7 @@
     label: '{{ backup_host }}'
   with_items: '{{ shares | selectattr("zfsrc","defined") | selectattr("backup_on","defined") | map(attribute="backup_on") | map("regex_replace","^.*@","") | list | unique }}'
   tags: zfs,replication
+  when: not restore
   register: replhosts
 
 - name: zfs shares

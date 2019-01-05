@@ -5,6 +5,7 @@ Setup ZFS on system
 Create zfs filesystems / volumes
   * integrates with `criecm.samba`, `criecm.nfs_server` and `criecm.ctld`
   * replication (every hour by default)
+  * restauration available ;)
 
 ## Requirements
 
@@ -39,6 +40,11 @@ Filer with zfs !
   * [`zfs_sync_vol`](https://github.com/criecm/savscript/raw/master/lib/zfs_sync_vol) script for replication
     if not installed, the role will download it to /root/zfs_sync_vol on backup machine(s)
     (the role may be easily adapted to use another tool)
+
+## restauration
+  - delete any share mountpoint to restore them
+  - add `-e restore=1` to import from backup host
+  - play again without `restore` to install sync
 
 Example Playbook
 ----------------
