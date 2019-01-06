@@ -31,3 +31,4 @@
   loop_control:
     loop_var: zfs
   tags: zfs
+  when: myzfs == "" or myzfs == zfs.name)

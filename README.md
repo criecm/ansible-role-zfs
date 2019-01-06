@@ -15,6 +15,7 @@ Filer with zfs !
 
   * `shares`: list of `share` dicts
   * `zfs_sync_vol` script if you need replication
+  * `myzfs ('')` override to process only this share.name
 
 ### share variables
   * `zfsrc` (MANDATORY)

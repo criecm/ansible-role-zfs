@@ -14,6 +14,6 @@
     extra_zfs_properties: '{{ zfsprops }}'
   register: newzfs
 
-- name: restore from backup
+- name: restore from backup if restore==1
   command: '{{ zfs_sync_vol }} -BRCzs {{ zfs.backup_on }} {{ zfs.zfsrc }}'
   when: restore and "backup_on" in zfs and ( not dirstat.stat.exists or newzfs.changed )
