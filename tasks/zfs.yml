@@ -17,3 +17,12 @@
 - name: restore from backup if restore==1
   command: '{{ zfs_sync_vol }} -BRCzs {{ zfs.backup_on }} {{ zfs.zfsrc }}'
   when: restore and "backup_on" in zfs and ( not dirstat.stat.exists or newzfs.changed )
+
+- name: chown/mod
+  file:
+    path: '{{ zfs.path }}'
+    mode: '{{ zfs.mode | default(omit) }}'
+    owner: '{{ zfs.owner | default(omit) }}'
+    group: '{{ zfs.group | default(omit) }}'
+    state: directory
+  when: '"path" in zfs and ( newzfs.changed or reshare | default(False) )
