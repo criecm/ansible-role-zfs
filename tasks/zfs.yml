@@ -25,4 +25,4 @@
     owner: '{{ zfs.owner | default(omit) }}'
     group: '{{ zfs.group | default(omit) }}'
     state: directory
-  when: '"path" in zfs and ( newzfs.changed or reshare | default(False) )
+  when: '"path" in zfs and ( newzfs.changed or reshare | default(False) )'
