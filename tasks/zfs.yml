@@ -3,6 +3,7 @@
   stat:
     path: '{{ zfs.path }}'
   register: dirstat
+  when: '"path" in zfs'
 
 - include_vars: zfs.yml
 
@@ -18,11 +19,11 @@
   command: '{{ zfs_sync_vol }} -BRCzs {{ zfs.backup_on }} {{ zfs.zfsrc }}'
   when: restore and "backup_on" in zfs and ( not dirstat.stat.exists or newzfs.changed )
 
-- name: chown/mod
+- name: chown/mod dir
   file:
     path: '{{ zfs.path }}'
     mode: '{{ zfs.mode | default(omit) }}'
     owner: '{{ zfs.owner | default(omit) }}'
     group: '{{ zfs.group | default(omit) }}'
     state: directory
-  when: '"path" in zfs and ( newzfs.changed or reshare | default(False) )'
+  when: '"path" in zfs and ( "owner" in zfs or "group" in zfs ) and ( newzfs.changed or reshare | default(False) )'
