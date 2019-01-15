@@ -60,9 +60,11 @@ Including an example of how to use your role (for instance, with variables passe
           # simple zfs filesystem
           - zfsrc: zdata/my/files
             path: /shares/myfiles
+
           # simple zfs volume
           - zfsrc: zdata/volz/myvol1
             volsize: '25G'
+
           # more complex filesystem
           - zfsrc: zdata/my/filesystems
             zfsprops:
@@ -70,16 +72,18 @@ Including an example of how to use your role (for instance, with variables passe
               refquota: '5G'
               aclmode: passthrough
             # replicate to otherhost
-            backup_to: otherhost
+            backup_on: zdata/my/filesystems@otherhost
             # replicate 4 times per hour
             backup_minute: '14,28,42,56'
+
           # replicated volumes container
           - zfsrc: zdata/rvolz
             path: 'none'
-            backup_to: otherhost
+            backup_on: zdata/rvolz@otherhost
             # backup every 4 hour
             backup_hour: '*/4'
-          # this volume will be replicated with above container
+
+          # this volume will be replicated via above container
           - name: simple-repl-vol
             zfsrc: zdata/rvolz/mysecondvol
             volsize: '15G'
@@ -104,7 +108,6 @@ Including an example of how to use your role (for instance, with variables passe
               shadow:sort: desc
               shadow:format: 'GMT-%Y.%m.%d-%H.%M.%S'
               shadow:snapdir: .zfs/snapshot
-              inherit acls: 'Yes'
               inherit owner: 'Yes'
               inherit permissions: 'Yes'
             nfsshares:
