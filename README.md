@@ -26,6 +26,14 @@ Filer with zfs !
     if defined, will create a volume instead of filesystem
   * `zfsprops` ({})
     dict of zfs properties to set
+  * `mode ()`
+    if you need to chmod new dir instead of default umask
+  * `owner ()`
+    Change from default "root" owner
+  * `group ()`
+    Change from default group (0)
+  * `acls ([])`
+    If you need to apply acls (NFSv4 or POSIX, not both)
 
 #### if you want replication, add:
   * `backup_on` ('')
@@ -71,14 +79,13 @@ Including an example of how to use your role (for instance, with variables passe
               atime: 'off'
               refquota: '5G'
               aclmode: passthrough
-            # replicate to otherhost
-            backup_on: zdata/my/filesystems@otherhost
-            # replicate 4 times per hour
-            backup_minute: '14,28,42,56'
+            owner: memyselfandi
+            mode: '0700'
 
           # replicated volumes container
           - zfsrc: zdata/rvolz
             path: 'none'
+            # replicate to otherhost
             backup_on: zdata/rvolz@otherhost
             # backup every 4 hour
             backup_hour: '*/4'
@@ -96,6 +103,11 @@ Including an example of how to use your role (for instance, with variables passe
             zfsprops:
               aclmode: passthrough
               aclinherit: passthrough
+            group: salers
+            mode: '0770'
+            acls:
+              - 'group:salctrls:read_set:fd'
+              - 'group:auditors:read_set:fd'
             cifs: Yes
             smbparams:
               comment: 'Y: on shaun'
