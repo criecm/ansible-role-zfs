@@ -32,4 +32,5 @@
   acl:
     entry: '{{ item }}'
     path: '{{ zfs.path }}'
+    state: present
   with_items: '{{ zfs.acls | default([]) }}'
