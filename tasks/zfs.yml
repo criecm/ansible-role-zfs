@@ -32,5 +32,6 @@
   acl:
     entry: '{{ item }}'
     path: '{{ zfs.path }}'
+    use_nfsv4_acls: '{{ nfsv4_acls }}'
     state: present
   with_items: '{{ zfs.acls | default([]) }}'

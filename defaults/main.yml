@@ -5,3 +5,5 @@ zfs_sync_vol: /root/zfs_sync_vol
 restore: False
 
 myzfs: ''
+
+nfsv4_acls: True

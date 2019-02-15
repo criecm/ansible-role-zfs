@@ -33,7 +33,9 @@ Filer with zfs !
   * `group ()`
     Change from default group (0)
   * `acls ([])`
-    If you need to apply acls (NFSv4 or POSIX, not both)
+    If you need to apply acls
+  * `nfsv4_acls (True)`
+    acls are NFSv4, not POSIX
 
 #### if you want replication, add:
   * `backup_on` ('')
