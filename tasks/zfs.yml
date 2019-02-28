@@ -27,6 +27,7 @@
     group: '{{ zfs.group | default(omit) }}'
     state: directory
   when: '"path" in zfs and ( "owner" in zfs or "group" in zfs ) and ( newzfs.changed or reshare | default(False) )'
+  when: newzfs.changed
 
 - name: setfacl
   acl:
@@ -35,3 +36,4 @@
     use_nfsv4_acls: '{{ nfsv4_acls }}'
     state: present
   with_items: '{{ zfs.acls | default([]) }}'
+  when: newzfs.changed

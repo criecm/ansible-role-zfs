@@ -33,7 +33,7 @@ Filer with zfs !
   * `group ()`
     Change from default group (0)
   * `acls ([])`
-    If you need to apply acls
+    If you need to apply acls (only on create)
   * `nfsv4_acls (True)`
     acls are NFSv4, not POSIX
 
@@ -108,6 +108,7 @@ Including an example of how to use your role (for instance, with variables passe
             group: salers
             mode: '0770'
             acls:
+              - 'group:salctrls:full_set:fd'
               - 'group:salctrls:read_set:fd'
               - 'group:auditors:read_set:fd'
             cifs: Yes
