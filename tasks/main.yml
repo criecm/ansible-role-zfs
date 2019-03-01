@@ -1,6 +1,7 @@
 ---
 # tasks file for criecm.zfs
-- include_tasks: '{{ includefile }}'
+- name: OS vars
+  include_tasks: '{{ includefile }}'
   with_first_found:
     - files:
         - '{{ ansible_os_family }}.yml'

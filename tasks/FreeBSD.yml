@@ -11,4 +11,3 @@
     name: zfsd
     enabled: yes
     state: started
-
