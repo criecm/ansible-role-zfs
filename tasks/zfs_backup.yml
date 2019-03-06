@@ -30,7 +30,7 @@
     user: root
     state: present
 #    key_options: 'from="{{ first_ssh.stdout_lines[0] | regex_replace("\.$","") }},{{ ansible_hostname }}"'
-  when: zfssh_key.stdout_lines > 0 and sshalready.rc > 0
+  when: zfssh_key.stdout_lines | count > 0 and sshalready.rc > 0
 # and first_ssh.stdout_lines > 0
 
 - name: make first ssh connection from backup (known_hosts + get client IP)
@@ -48,7 +48,7 @@
     user: root
     state: present
     key_options: 'from="{{ first_ssh.stdout_lines[0] | regex_replace("\.$","") }},{{ backup_host }}"'
-  when: zfssh_key.stdout_lines > 0 and first_ssh.stdout_lines > 0
+  when: zfssh_key.stdout_lines | count > 0 and first_ssh.stdout_lines | count > 0
 
 - name: check zfs_sync_vol
   stat:
