@@ -32,4 +32,4 @@
   loop_control:
     loop_var: zfs
   tags: zfs
-  when: myzfs | lenght == 0 or myzfs == zfs.name
+  when: myzfs | length == 0 or myzfs == zfs.name
