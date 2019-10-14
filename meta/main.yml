@@ -1,4 +1,5 @@
 galaxy_info:
+  role_name: zfs
   author: Geoffroy Desvernay
   description: simple ZFS role
   company: Ecole Centrale Marseille
@@ -35,11 +36,11 @@ galaxy_info:
   platforms:
     - name: FreeBSD
       versions:
-        - 12.0
-        - 11.2
+        - all
     - name: Debian
       versions:
         - stretch
+        - buster
 
   galaxy_tags:
     - zfs

@@ -5,7 +5,8 @@
   register: dirstat
   when: '"path" in zfs'
 
-- include_vars: zfs.yml
+- name: merge vars
+  include_vars: zfs.yml
 
 - name: 'zfs {{ zfs.zfsrc }}'
   zfs:

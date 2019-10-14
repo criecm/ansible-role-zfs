@@ -56,15 +56,16 @@
   register: statzsv
   delegate_to: '{{ backup_host }}'
 
-- block:
-  - name: install zfs_sync_vol if needed
-    fetch:
-      dest: /root/zfs_sync_vol
-      src: https://github.com/criecm/savscript/raw/master/lib/zfs_sync_vol
-  - name: chmod +x
-    file:
-      path: /root/zfs_sync_vol
-      mode: '0755'
+- name: zfs_sync_vol helper script
+  block:
+    - name: install zfs_sync_vol if needed
+      fetch:
+        dest: /root/zfs_sync_vol
+        src: https://github.com/criecm/savscript/raw/master/lib/zfs_sync_vol
+    - name: chmod +x
+      file:
+        path: /root/zfs_sync_vol
+        mode: '0755'
   when: not statzsv.stat.exists
   delegate_to: '{{ backup_host }}'
 
@@ -81,14 +82,18 @@
   when: ansible_os_family == "FreeBSD"
   delegate_to: '{{ backup_host }}'
 
-- debug:
-    msg: '{{ shares | selectattr("zfsrc","defined") | selectattr("backup_on","defined") | selectattr("backup_on","search","@"+backup_host+"$") | map(attribute="zfsrc") | join(",") }}'
+- name: show backup shares for {{ backup_host }}
+  debug:
+    msg: '{{ shares | selectattr("zfsrc","defined") | selectattr("backup_on","defined") 
+    | selectattr("backup_on","search","@"+backup_host+"$") | map(attribute="zfsrc") | join(",") }}'
   delegate_to: '{{ backup_host }}'
 
 - name: install zfs_sync crontab
   cron:
     name: 'backup {{ zfs.zfsrc }} from {{ inventory_hostname }}'
-    job: '{{ zfs_sync_vol | default("/root/zfs_sync_vol") }} -k ~/.ssh/id_rsa_{{ ansible_hostname }} -BRIC -uU {{ zfs.zfsrc }}@{{ ansible_hostname }} {{ zfs.backup_on | regex_replace("@.*$","") }} >> /var/log/zfs_sync_{{ zfs.zfsrc | regex_replace("/","_") }}.log'
+    job: '{{ zfs_sync_vol | default("/root/zfs_sync_vol") 
+    }} -k ~/.ssh/id_rsa_{{ ansible_hostname }} -BRIC -uU {{ zfs.zfsrc }}@{{ ansible_hostname }} {{ zfs.backup_on 
+    | regex_replace("@.*$","") }} >> /var/log/zfs_sync_{{ zfs.zfsrc | regex_replace("/","_") }}.log'
     minute: '{{ zfs.backup_minute | default( 59 | random(seed=zfs.zfsrc)) }}'
     hour: '{{ zfs.backup_hour | default("*") }}'
   with_items: '{{ shares | selectattr("zfsrc","defined") | selectattr("backup_on","defined") | selectattr("backup_on","search","@"+backup_host) | list }}'
@@ -96,4 +101,3 @@
     loop_var: zfs
     label: '{{ zfs.zfsrc }}@{{ backup_host }}'
   delegate_to: '{{ backup_host }}'
-
