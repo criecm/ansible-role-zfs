@@ -71,10 +71,12 @@
 
 - name: newsyslog FreeBSD
   block:
-    - file:
+    - name: newsyslog.conf.d
+      file:
         path: /usr/local/etc/newsyslog.conf.d
         state: directory
-    - copy:
+    - name: newsyslog.conf.d/zfs_sync.conf
+      copy:
         dest: /usr/local/etc/newsyslog.conf.d/zfs_sync.conf
         content: |
           /var/log/zfs_sync_*.log 644 30  * @T00  JG
@@ -84,15 +86,15 @@
 
 - name: show backup shares for {{ backup_host }}
   debug:
-    msg: '{{ shares | selectattr("zfsrc","defined") | selectattr("backup_on","defined") 
+    msg: '{{ shares | selectattr("zfsrc","defined") | selectattr("backup_on","defined")
     | selectattr("backup_on","search","@"+backup_host+"$") | map(attribute="zfsrc") | join(",") }}'
   delegate_to: '{{ backup_host }}'
 
 - name: install zfs_sync crontab
   cron:
     name: 'backup {{ zfs.zfsrc }} from {{ inventory_hostname }}'
-    job: '{{ zfs_sync_vol | default("/root/zfs_sync_vol") 
-    }} -k ~/.ssh/id_rsa_{{ ansible_hostname }} -BRIC -uU {{ zfs.zfsrc }}@{{ ansible_hostname }} {{ zfs.backup_on 
+    job: '{{ zfs_sync_vol | default("/root/zfs_sync_vol")
+    }} -k ~/.ssh/id_rsa_{{ ansible_hostname }} -BRIC -uU {{ zfs.zfsrc }}@{{ ansible_hostname }} {{ zfs.backup_on
     | regex_replace("@.*$","") }} >> /var/log/zfs_sync_{{ zfs.zfsrc | regex_replace("/","_") }}.log'
     minute: '{{ zfs.backup_minute | default( 59 | random(seed=zfs.zfsrc)) }}'
     hour: '{{ zfs.backup_hour | default("*") }}'
