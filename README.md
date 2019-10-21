@@ -22,7 +22,7 @@ Filer with zfs !
     ZFS source
   * `path` (MANDATORY for zfs filesystem)
     if defined, will set the mountpoint of a filesystem
-  * `volsize` (MANDATORY for zfs volume)
+  * `volsize` (MANDATORY for zfs volume if no origin)
     if defined, will create a volume instead of filesystem
   * `zfsprops` ({})
     dict of zfs properties to set

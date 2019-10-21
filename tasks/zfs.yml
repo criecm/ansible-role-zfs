@@ -8,6 +8,13 @@
 - name: merge vars
   include_vars: zfs.yml
 
+- name: get origin size
+  zfs_facts:
+    name: '{{ zfs.origin | regex_replace("@.*","") }}'
+    properties: volsize
+  register: zorig_facts
+  when: '"origin" in zfs'
+
 - name: 'zfs {{ zfs.zfsrc }}'
   zfs:
     name: '{{ zfs.zfsrc }}'
@@ -15,6 +22,23 @@
     origin: '{{ zfs.origin | default(omit) }}'
     extra_zfs_properties: '{{ zfsprops }}'
   register: newzfs
+
+- name: fail if volsize < origin
+  fail:
+    msg: 'volsize({{ zfs.volsize }}) < zfs.origin.volsize({{ zorig_facts.ansible_facts.ansible_zfs_datasets[0].volsize }})'
+  when: '"origin" in zfs and zfs.origin is defined and zfs.origin is search("@")
+    and "volsize" in zfs and zfs.volsize is defined and zfs.volsize is match("[0-9].*")
+    and "volsize" in zorig_facts.ansible_facts.ansible_zfs_datasets[0] and zorig_facts.ansible_facts.ansible_zfs_datasets[0].volsize is match("[0-9].*")
+    and zfs.volsize | regex_replace("G","") | float <
+      zorig_facts.ansible_facts.ansible_zfs_datasets[0].volsize | regex_replace("G","") | float'
+
+- name: resize zfs volume
+  zfs:
+    name: '{{ zfs.zfsrc }}'
+    state: present
+    extra_zfs_properties:
+      volsize: '{{ zfs.volsize }}'
+  when: '"volsize" in zfs and zfs.volsize is defined and zfs.volsize is match("[0-9].*")'
 
 - name: restore from backup if restore==1
   command: '{{ zfs_sync_vol }} -BRCzs {{ zfs.backup_on }} {{ zfs.zfsrc }}'
