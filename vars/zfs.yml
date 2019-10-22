@@ -1,7 +1,12 @@
 ---
-props: '{{ zfs.zfsprops | default({}) }}'
-
 default_props:
-  mountpoint: '{{ zfs.path | default(omit) }}'
+  mountpoint: '{{ onezfs.path | default(omit) }}'
+  volsize: '{{ onezfs.volsize | default(omit) }}'
 
-zfsprops: '{{ default_props | combine(props) }}'
+zfsprops: '{{ default_props | combine( onezfs.zfsprops | default({}) ) | dict2items | rejectattr("value","equalto","")
+  | rejectattr("value","match","__omit_place_holder.*") | list | items2dict }}'
+
+zfs:
+  name: '{{ onezfs.zfsrc }}'
+  origin: '{{ onezfs.origin | default(omit) }}'
+  path: '{{ onezfs.path | default(omit) }}'

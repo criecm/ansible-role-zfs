@@ -1,47 +1,58 @@
 ---
+- name: merge vars
+  include_vars: zfs.yml
+
 - name: stat dir
   stat:
     path: '{{ zfs.path }}'
   register: dirstat
-  when: '"path" in zfs'
-
-- name: merge vars
-  include_vars: zfs.yml
+  when: zfs.path is defined and zfs.path is match("/")
 
 - name: get origin size
   zfs_facts:
     name: '{{ zfs.origin | regex_replace("@.*","") }}'
     properties: volsize
   register: zorig_facts
-  when: '"origin" in zfs'
+  when: '"origin" in zfs and zfs.origin is defined and zfs.origin is search("@")'
 
-- name: 'zfs {{ zfs.zfsrc }}'
+- name: clone {{ zfs.origin }} to {{ zfs.name }}
   zfs:
-    name: '{{ zfs.zfsrc }}'
+    name: '{{ zfs.name }}'
     state: present
-    origin: '{{ zfs.origin | default(omit) }}'
+    origin: '{{ zfs.origin }}'
+    extra_zfs_properties: '{{ zfsprops | dict2items | rejectattr("key","equalto","volsize") | list | items2dict }}'
+  register: newzfs
+  when: 'zfs.origin is defined and zfs.origin is search("@")'
+
+- name: 'zfs {{ zfs.name }}'
+  zfs:
+    name: '{{ zfs.name }}'
+    state: present
     extra_zfs_properties: '{{ zfsprops }}'
   register: newzfs
+  when: 'zfs.origin is not defined or zfs.origin is not search("@")'
 
 - name: fail if volsize < origin
   fail:
-    msg: 'volsize({{ zfs.volsize }}) < zfs.origin.volsize({{ zorig_facts.ansible_facts.ansible_zfs_datasets[0].volsize }})'
-  when: '"origin" in zfs and zfs.origin is defined and zfs.origin is search("@")
-    and "volsize" in zfs and zfs.volsize is defined and zfs.volsize is match("[0-9].*")
+    msg: 'volsize({{ zfsprops.volsize }}) < zfs.origin.volsize({{ zorig_facts.ansible_facts.ansible_zfs_datasets[0].volsize }})'
+  when: '"origin" in zfs and zfs.origin is defined and zfs.origin is not match("$")
+    and "volsize" in zfsprops and zfsprops.volsize is defined and zfsprops.volsize is match("[0-9].*")
     and "volsize" in zorig_facts.ansible_facts.ansible_zfs_datasets[0] and zorig_facts.ansible_facts.ansible_zfs_datasets[0].volsize is match("[0-9].*")
-    and zfs.volsize | regex_replace("G","") | float <
+    and zfsprops.volsize | regex_replace("G","") | float <
       zorig_facts.ansible_facts.ansible_zfs_datasets[0].volsize | regex_replace("G","") | float'
 
-- name: resize zfs volume
+- name: resize zfs clone if needed
   zfs:
-    name: '{{ zfs.zfsrc }}'
+    name: '{{ zfs.name }}'
     state: present
     extra_zfs_properties:
-      volsize: '{{ zfs.volsize }}'
-  when: '"volsize" in zfs and zfs.volsize is defined and zfs.volsize is match("[0-9].*")'
+      volsize: '{{ zfsprops.volsize }}'
+  when: 'zfsprops.volsize is defined and zfsprops.volsize is match("[0-9].*")
+    and zfs.origin is defined and zfs.origin is search("@")
+    and zfsprops.volsize != zorig_facts.ansible_facts.ansible_zfs_datasets[0].volsize'
 
 - name: restore from backup if restore==1
-  command: '{{ zfs_sync_vol }} -BRCzs {{ zfs.backup_on }} {{ zfs.zfsrc }}'
+  command: '{{ zfs_sync_vol }} -BRCzs {{ zfs.backup_on }} {{ zfs.name }}'
   when: restore and "backup_on" in zfs and ( not dirstat.stat.exists or newzfs.changed )
 
 - name: chown/mod dir
