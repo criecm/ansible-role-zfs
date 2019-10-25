@@ -30,6 +30,6 @@
   include_tasks: zfs.yml
   with_items: '{{ shares | selectattr("zfsrc","defined") | list }}'
   loop_control:
-    loop_var: zfs
+    loop_var: onezfs
   tags: zfs
-  when: myzfs | length == 0 or myzfs == zfs.name
+  when: myzfs | length == 0 or myzfs == onezfs.name
