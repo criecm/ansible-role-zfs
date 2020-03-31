@@ -94,7 +94,7 @@
   cron:
     name: 'backup {{ zfs.zfsrc }} from {{ inventory_hostname }}'
     job: '{{ zfs_sync_vol | default("/root/zfs_sync_vol")
-    }} -k ~/.ssh/id_rsa_{{ ansible_hostname }} -BRIC -uU {{ zfs.zfsrc }}@{{ ansible_hostname }} {{ zfs.backup_on
+    }} -k ~/.ssh/id_rsa_{{ ansible_hostname }} -BrC -u {{ zfs.zfsrc }}@{{ ansible_hostname }} {{ zfs.backup_on
     | regex_replace("@.*$","") }} >> /var/log/zfs_sync_{{ zfs.zfsrc | regex_replace("/","_") }}.log'
     minute: '{{ zfs.backup_minute | default( 59 | random(seed=zfs.zfsrc)) }}'
     hour: '{{ zfs.backup_hour | default("*") }}'
