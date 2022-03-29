@@ -12,7 +12,6 @@
 
 - name: get ssh key
   command: 'cat ~/.ssh/id_rsa_{{ ansible_hostname }}.pub'
-  check_mode: False
   changed_when: False
   register: zfssh_key
   delegate_to: '{{ backup_host }}'
@@ -20,7 +19,6 @@
 - name: has server backup's ssh key ?
   command: 'fgrep {{ zfssh_key.stdout | regex_replace("ssh-[a-z0-9]* ([^ ]*)( .*)?$","\1") }} ~root/.ssh/authorized_keys'
   changed_when: False
-  check_mode: False
   failed_when: False
   register: sshalready
 
@@ -37,7 +35,6 @@
   command: |
     ssh -i ~/.ssh/id_rsa_{{ ansible_hostname }} -oStrictHostKeyChecking=no -oIdentitiesOnly=yes -oKbdInteractiveAuthentication=no -oUpdateHostKeys=yes {{ inventory_hostname }} 'echo ${SSH_CLIENT%% *}'
   register: first_ssh
-  check_mode: False
   changed_when: False
   failed_when: first_ssh.stdout_lines | count == 0
   delegate_to: '{{ backup_host }}'
