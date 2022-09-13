@@ -37,6 +37,16 @@ Filer with zfs !
   * `nfsv4_acls (True)`
     acls are NFSv4, not POSIX
 
+#### if you want PRA replication (same filesystems, snapshots and properties on destination), add:
+  * `pra_on ('')`
+    "host:zfs/path" to set up PRA replication
+  * `pra_minute ({pseudo-random})`
+     minute field for crontab
+     if you replicate many filesystems more than once per hour, take care of
+     choosing different minutes to avoid launching all at the same time
+  * `pra_hour (*)`
+     hour field for crontab
+
 #### if you want replication, add:
   * `backup_on` ('')
     "zfs/path@host" to set up synchronization
@@ -51,6 +61,7 @@ Filer with zfs !
   * [`zfs_sync_vol`](https://github.com/criecm/savscript/raw/master/lib/zfs_sync_vol) script for replication
     if not installed, the role will download it to /root/zfs_sync_vol on backup machine(s)
     (the role may be easily adapted to use another tool)
+  * [`zfs_pra_scripts`](https://forge.centrale-marseille.fr/projects/sysutils/repository/zfs/revisions/master/show/pra) directory containing scripts for `zfs send | receive` over ssh, must pre-exist on source and destination
 
 ## restauration
   - delete any share mountpoint to restore them

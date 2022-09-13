@@ -7,3 +7,5 @@ restore: False
 myzfs: ''
 
 nfsv4_acls: True
+
+zfs_pra_scripts: /root/zfs_pra

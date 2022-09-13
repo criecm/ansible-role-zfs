@@ -26,6 +26,16 @@
   when: not restore
   register: replhosts
 
+- name: PRA hosts
+  include_tasks: zfs_pra.yml
+  loop_control:
+    loop_var: pra_host
+    label: '{{ pra_host }}'
+  with_items: '{{ shares | selectattr("zfsrc","defined") | selectattr("pra_on","defined") | map(attribute="pra_on") | map("regex_replace",":.*$","") | list | unique }}'
+  tags: zfs,pra
+  when: not restore
+  register: prahosts
+
 - name: zfs shares
   include_tasks: zfs.yml
   with_items: '{{ shares | selectattr("zfsrc","defined") | list }}'
