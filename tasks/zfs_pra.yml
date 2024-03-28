@@ -19,6 +19,7 @@
   fail:
     msg: "Missing zfs_pra scripts on source or destination"
   when: not statzfsprasync.stat.exists or not statzfsprasend.stat.exists
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: ssh key
   command: 'ssh-keygen -t rsa -N "" -f ~/.ssh/id_ed25519_sync'
