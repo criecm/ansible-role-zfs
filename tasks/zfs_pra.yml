@@ -50,10 +50,17 @@
 
 - name: make first ssh connection from pra host (known_hosts + get client IP)
   command: 'ssh -i ~/.ssh/id_ed25519_sync -oStrictHostKeyChecking=no -oIdentitiesOnly=yes -oKbdInteractiveAuthentication=no -oUpdateHostKeys=yes {{ inventory_hostname
-  }} connect'
+  }} {{ pra_host }} connect'
   register: first_ssh
   changed_when: False
   failed_when: first_ssh.stdout_lines | count == 0
+  delegate_to: '{{ pra_host }}'
+
+- name: get {{ pra_host }} FQDN
+  shell: 'getent hosts {{ pra_host }} | cut -d" " -f1; hostname -f; hostname -s; echo {{ first_ssh.stdout_lines[0] | regex_replace(" .*","") }}'
+  changed_when: False
+  check_mode: False
+  register: pra_host_fqdn
   delegate_to: '{{ pra_host }}'
 
 - name: put pra ssh key on host with 'from='
@@ -61,7 +68,7 @@
     key: '{{ zfssh_key.stdout }}'
     user: root
     state: present
-    key_options: 'command="{{ zfs_pra_scripts }}/send_zfs_pra.sh",from="{{ first_ssh.stdout_lines[0] | regex_replace(" .* ok$","") }},{{ pra_host }}"'
+    key_options: 'command="{{ zfs_pra_scripts }}/send_zfs_pra.sh",from="{{ pra_host_fqdn.stdout_lines | unique | join(",") }}"'
   when: zfssh_key.stdout_lines | count > 0 and first_ssh.stdout_lines | count > 0
 
 - name: show pra shares for {{ pra_host }}
