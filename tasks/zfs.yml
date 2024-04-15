@@ -2,6 +2,11 @@
 - name: merge vars
   include_vars: zfs.yml
 
+- name: check vars
+  ansible.builtin.assert:
+    that:
+      - zfs.sync_on | default([]) is not string
+
 - name: stat dir
   stat:
     path: '{{ zfs.path }}'

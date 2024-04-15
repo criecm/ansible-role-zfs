@@ -1,0 +1,101 @@
+---
+#    {{ inventory_hostname }} est l'hote d'origine
+#    {{ sync_host }} la machine de sauvegarde
+#
+# replication
+# needs zfs_sync_scripts script on sync host
+- name: check zfs_sync_scripts on source AND dest hosts
+  stat:
+    path: '{{ zfs_sync_scripts }}/sync_zfs_from.sh'
+  register: statzfssync
+  delegate_to: '{{ sync_host }}'
+
+- name: check zfs_sync_scripts
+  stat:
+    path: '{{ zfs_sync_scripts }}/send_zfs.sh'
+  register: statzfssyncsend
+
+- name: fail if scripts missing
+  fail:
+    msg: "Missing zfs_sync scripts on source or destination"
+  when: not statzfssync.stat.exists or not statzfssyncsend.stat.exists
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: ssh key
+  command: 'ssh-keygen -t rsa -N "" -f ~/.ssh/id_ed25519_sync'
+  args:
+    creates: '~/.ssh/id_ed25519_sync'
+  delegate_to: '{{ sync_host }}'
+
+- name: get ssh key
+  command: 'cat ~/.ssh/id_ed25519_sync.pub'
+  changed_when: False
+  register: zfssh_key
+  delegate_to: '{{ sync_host }}'
+
+- name: has server sync's ssh key ?
+  command: 'fgrep {{ zfssh_key.stdout | regex_replace("ssh-[a-z0-9]* ([^ ]*)( .*)?$","\1") }} ~root/.ssh/authorized_keys'
+  changed_when: False
+  failed_when: False
+  register: sshalready
+
+- name: put sync ssh key on host (tmp)
+  authorized_key:
+    key: '{{ zfssh_key.stdout }}'
+    user: root
+    state: present
+    key_options: 'command="{{ zfs_sync_scripts }}/send_zfs.sh"'
+  when: zfssh_key.stdout_lines | count > 0 and sshalready.rc > 0
+
+- name: make first ssh connection from sync host (known_hosts + get client IP)
+  command: 'ssh -i ~/.ssh/id_ed25519_sync -oStrictHostKeyChecking=no -oIdentitiesOnly=yes -oKbdInteractiveAuthentication=no -oUpdateHostKeys=yes {{ inventory_hostname
+  }} {{ sync_host }} connect'
+  register: first_ssh
+  changed_when: False
+  failed_when: first_ssh.stdout_lines | count == 0
+  delegate_to: '{{ sync_host }}'
+
+- name: get {{ sync_host }} FQDN
+  shell: 'getent hosts {{ sync_host }} | cut -d" " -f1; hostname -f; hostname -s; echo {{ first_ssh.stdout_lines[0] | regex_replace(" .*","") }}'
+  changed_when: False
+  check_mode: False
+  register: sync_host_fqdn
+  delegate_to: '{{ sync_host }}'
+
+- name: put sync ssh key on host with 'from='
+  authorized_key:
+    key: '{{ zfssh_key.stdout }}'
+    user: root
+    state: present
+    key_options: 'command="{{ zfs_sync_scripts }}/send_zfs.sh",from="{{ sync_host_fqdn.stdout_lines | unique | join(",") }}"'
+  when: zfssh_key.stdout_lines | count > 0 and first_ssh.stdout_lines | count > 0
+
+- name: show sync shares for {{ sync_host }}
+  debug:
+    msg: '{{ shares | selectattr("zfsrc","defined") | selectattr("sync_on","defined")
+    | selectattr("sync_on","search","[^,]"+sync_host+":") | map(attribute="zfsrc") | join(",") }}'
+  delegate_to: '{{ sync_host }}'
+
+- name: delete old sync cron
+  cron: 
+    name: 'backup {{ zfs.zfsrc }} from {{ inventory_hostname }}'
+    state: absent
+  with_items: '{{ shares | selectattr("zfsrc","defined") | selectattr("sync_on","defined") | selectattr("sync_on","search","[^,]"+sync_host+":") | list }}'
+  loop_control:
+    loop_var: zfs
+    label: '{{ sync_host }}:{{ zfs.zfsrc }}'
+  register: oldcron
+  delegate_to: '{{ sync_host }}'
+
+- name: install zfs_sync crontab
+  cron:
+    name: 'sync {{ zfs.zfsrc }} from {{ inventory_hostname }}'
+    job: '{{ zfs_sync_scripts }}/sync_zfs_from.sh ~/.ssh/id_ed25519_sync {{ ansible_hostname }}:{{ zfs.zfsrc }} {{ zfs.sync_on
+    | select("search","^"+sync_host+":") | first | regex_replace("^[^:]+:","") }} 36h15d8w12m1y'
+    minute: '{{ zfs.sync_minute | default( 59 | random(seed=zfs.zfsrc)) }}'
+    hour: '{{ zfs.sync_hour | default("*") }}'
+  with_items: '{{ shares | selectattr("zfsrc","defined") | selectattr("sync_on","defined") | selectattr("sync_on","search","[^,]"+sync_host+":") }}'
+  loop_control:
+    loop_var: zfs
+    label: '{{ sync_host }}:{{ zfs.zfsrc }}'
+  delegate_to: '{{ sync_host }}'

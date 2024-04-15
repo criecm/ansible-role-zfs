@@ -36,6 +36,16 @@
   when: not restore
   register: prahosts
 
+- name: zfs_sync hosts
+  include_tasks: zfs_sync.yml
+  loop_control:
+    loop_var: sync_host
+    label: '{{ sync_host }}'
+  with_items: '{{ shares | selectattr("zfsrc","defined") | selectattr("sync_on","defined") | map(attribute="sync_on") | flatten | map("regex_replace",":.*$","") | unique }}'
+  tags: zfs,pra
+  when: not restore
+  register: prahosts
+
 - name: zfs shares
   include_tasks: zfs.yml
   with_items: '{{ shares | selectattr("zfsrc","defined") | list }}'

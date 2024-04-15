@@ -48,6 +48,16 @@ Filer with zfs !
      hour field for crontab
 
 #### if you want replication, add:
+  * `sync_on ([])`
+     list of machine:zfs/path to replicate this zfs to
+  * `sync_minute ({pseudo-random})`
+     minute field for crontab
+     if you replicate many filesystems more than once per hour, take care of
+     choosing different minutes to avoid launching all at the same time
+  * `sync_hour (*)`
+     hour field for crontab
+
+#### if you want old-school replication, add:
   * `backup_on` ('')
     "zfs/path@host" to set up synchronization
   * `backup_minute` ({pseudo-random})
@@ -62,6 +72,7 @@ Filer with zfs !
     if not installed, the role will download it to /root/zfs_sync_vol on backup machine(s)
     (the role may be easily adapted to use another tool)
   * [`zfs_pra_scripts`](https://forge.centrale-marseille.fr/projects/sysutils/repository/zfs/revisions/master/show/pra) directory containing scripts for `zfs send | receive` over ssh, must pre-exist on source and destination
+  * [`zfs_sync_scripts`](https://forge.centrale-marseille.fr/projects/sysutils/repository/zfs/revisions/master/show/sync) directory containing scripts for `zfs send | receive` over ssh using bookmarks on source
 
 ## restauration
   - delete any share mountpoint to restore them
