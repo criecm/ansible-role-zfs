@@ -61,6 +61,7 @@
   check_mode: False
   register: sync_host_fqdn
   delegate_to: '{{ sync_host }}'
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: put sync ssh key on host with 'from='
   authorized_key:
