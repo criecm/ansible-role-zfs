@@ -62,6 +62,7 @@
   check_mode: False
   register: pra_host_fqdn
   delegate_to: '{{ pra_host }}'
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: put pra ssh key on host with 'from='
   authorized_key:
