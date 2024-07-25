@@ -42,9 +42,9 @@
     loop_var: sync_host
     label: '{{ sync_host }}'
   with_items: '{{ shares | selectattr("zfsrc","defined") | selectattr("sync_on","defined") | map(attribute="sync_on") | flatten | map("regex_replace",":.*$","") | unique }}'
-  tags: zfs,pra
+  tags: zfs,sync
   when: not restore
-  register: prahosts
+  register: synchosts
 
 - name: zfs shares
   include_tasks: zfs.yml

@@ -74,14 +74,14 @@
 - name: show sync shares for {{ sync_host }}
   debug:
     msg: '{{ shares | selectattr("zfsrc","defined") | selectattr("sync_on","defined")
-    | selectattr("sync_on","search","[^,]"+sync_host+":") | map(attribute="zfsrc") | join(",") }}'
+    | selectattr("sync_on","search","^"+sync_host+":") | map(attribute="zfsrc") | join(",") }}'
   delegate_to: '{{ sync_host }}'
 
 - name: delete old sync cron
   cron: 
     name: 'backup {{ zfs.zfsrc }} from {{ inventory_hostname }}'
     state: absent
-  with_items: '{{ shares | selectattr("zfsrc","defined") | selectattr("sync_on","defined") | selectattr("sync_on","search","[^,]"+sync_host+":") | list }}'
+  with_items: '{{ shares | selectattr("zfsrc","defined") | selectattr("sync_on","defined") | selectattr("sync_on","search","^"+sync_host+":") | list }}'
   loop_control:
     loop_var: zfs
     label: '{{ sync_host }}:{{ zfs.zfsrc }}'
@@ -92,10 +92,10 @@
   cron:
     name: 'sync {{ zfs.zfsrc }} from {{ inventory_hostname }}'
     job: '{{ zfs_sync_scripts }}/sync_zfs_from.sh ~/.ssh/id_ed25519_sync {{ ansible_hostname }}:{{ zfs.zfsrc }} {{ zfs.sync_on
-    | select("search","^"+sync_host+":") | first | regex_replace("^[^:]+:","") }} 36h15d8w12m1y'
+    | regex_replace("^[^:]+:","") }} 36h15d8w12m1y'
     minute: '{{ zfs.sync_minute | default( 59 | random(seed=zfs.zfsrc)) }}'
     hour: '{{ zfs.sync_hour | default("*") }}'
-  with_items: '{{ shares | selectattr("zfsrc","defined") | selectattr("sync_on","defined") | selectattr("sync_on","search","[^,]"+sync_host+":") }}'
+  with_items: '{{ shares | selectattr("zfsrc","defined") | selectattr("sync_on","defined") | selectattr("sync_on","search","^"+sync_host+":") | list }}'
   loop_control:
     loop_var: zfs
     label: '{{ sync_host }}:{{ zfs.zfsrc }}'
