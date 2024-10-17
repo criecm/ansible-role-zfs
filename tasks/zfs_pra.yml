@@ -74,7 +74,7 @@
 
 - name: show pra shares for {{ pra_host }}
   debug:
-    msg: '{{ shares | selectattr("zfsrc","defined") | selectattr("pra_on","defined")
+    msg: '{{ (shares + group_shares) | selectattr("zfsrc","defined") | selectattr("pra_on","defined")
     | selectattr("pra_on","search","^"+pra_host+":") | map(attribute="zfsrc") | join(",") }}'
   delegate_to: '{{ pra_host }}'
 
@@ -82,7 +82,7 @@
   cron: 
     name: 'backup {{ zfs.zfsrc }} from {{ inventory_hostname }}'
     state: absent
-  with_items: '{{ shares | selectattr("zfsrc","defined") | selectattr("pra_on","defined") | selectattr("pra_on","search","^"+pra_host+":") | list }}'
+  with_items: '{{ (shares + group_shares) | selectattr("zfsrc","defined") | selectattr("pra_on","defined") | selectattr("pra_on","search","^"+pra_host+":") | list }}'
   loop_control:
     loop_var: zfs
     label: '{{ pra_host }}:{{ zfs.zfsrc }}'
@@ -96,7 +96,7 @@
     | regex_replace("^[^:]+:","") }} 36h15d8w12m1y'
     minute: '{{ zfs.pra_minute | default( 59 | random(seed=zfs.zfsrc)) }}'
     hour: '{{ zfs.pra_hour | default("*") }}'
-  with_items: '{{ shares | selectattr("zfsrc","defined") | selectattr("pra_on","defined") | selectattr("pra_on","search","^"+pra_host+":") | list }}'
+  with_items: '{{ (shares + group_shares) | selectattr("zfsrc","defined") | selectattr("pra_on","defined") | selectattr("pra_on","search","^"+pra_host+":") | list }}'
   loop_control:
     loop_var: zfs
     label: '{{ pra_host }}:{{ zfs.zfsrc }}'

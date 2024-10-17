@@ -73,7 +73,7 @@
 
 - name: show sync shares for {{ sync_host }}
   debug:
-    msg: '{{ shares | selectattr("zfsrc","defined") | selectattr("sync_on","defined")
+    msg: '{{ (shares + group_shares) | selectattr("zfsrc","defined") | selectattr("sync_on","defined")
     | selectattr("sync_on","search","^"+sync_host+":") | map(attribute="zfsrc") | join(",") }}'
   delegate_to: '{{ sync_host }}'
 
@@ -81,7 +81,7 @@
   cron: 
     name: 'backup {{ zfs.zfsrc }} from {{ inventory_hostname }}'
     state: absent
-  with_items: '{{ shares | selectattr("zfsrc","defined") | selectattr("sync_on","defined") | selectattr("sync_on","search","^"+sync_host+":") | list }}'
+  with_items: '{{ (shares + group_shares) | selectattr("zfsrc","defined") | selectattr("sync_on","defined") | selectattr("sync_on","search","^"+sync_host+":") | list }}'
   loop_control:
     loop_var: zfs
     label: '{{ sync_host }}:{{ zfs.zfsrc }}'
@@ -95,7 +95,7 @@
     | regex_replace("^[^:]+:","") }} 36h15d8w12m1y'
     minute: '{{ zfs.sync_minute | default( 59 | random(seed=zfs.zfsrc)) }}'
     hour: '{{ zfs.sync_hour | default("*") }}'
-  with_items: '{{ shares | selectattr("zfsrc","defined") | selectattr("sync_on","defined") | selectattr("sync_on","search","^"+sync_host+":") | list }}'
+  with_items: '{{ (shares + group_shares) | selectattr("zfsrc","defined") | selectattr("sync_on","defined") | selectattr("sync_on","search","^"+sync_host+":") | list }}'
   loop_control:
     loop_var: zfs
     label: '{{ sync_host }}:{{ zfs.zfsrc }}'

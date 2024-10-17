@@ -21,7 +21,7 @@
   loop_control:
     loop_var: backup_host
     label: '{{ backup_host }}'
-  with_items: '{{ shares | selectattr("zfsrc","defined") | selectattr("backup_on","defined") | map(attribute="backup_on") | map("regex_replace","^.*@","") | list | unique }}'
+  with_items: '{{ (shares + group_shares) | selectattr("zfsrc","defined") | selectattr("backup_on","defined") | map(attribute="backup_on") | map("regex_replace","^.*@","") | list | unique }}'
   tags: zfs,replication
   when: not restore
   register: replhosts
@@ -31,7 +31,7 @@
   loop_control:
     loop_var: pra_host
     label: '{{ pra_host }}'
-  with_items: '{{ shares | selectattr("zfsrc","defined") | selectattr("pra_on","defined") | map(attribute="pra_on") | map("regex_replace",":.*$","") | list | unique }}'
+  with_items: '{{ (shares + group_shares) | selectattr("zfsrc","defined") | selectattr("pra_on","defined") | map(attribute="pra_on") | map("regex_replace",":.*$","") | list | unique }}'
   tags: zfs,pra
   when: not restore
   register: prahosts
@@ -41,14 +41,14 @@
   loop_control:
     loop_var: sync_host
     label: '{{ sync_host }}'
-  with_items: '{{ shares | selectattr("zfsrc","defined") | selectattr("sync_on","defined") | map(attribute="sync_on") | flatten | map("regex_replace",":.*$","") | unique }}'
+  with_items: '{{ (shares + group_shares) | selectattr("zfsrc","defined") | selectattr("sync_on","defined") | map(attribute="sync_on") | flatten | map("regex_replace",":.*$","") | unique }}'
   tags: zfs,sync
   when: not restore
   register: synchosts
 
 - name: zfs shares
   include_tasks: zfs.yml
-  with_items: '{{ shares | selectattr("zfsrc","defined") | list }}'
+  with_items: '{{ (shares + group_shares) | selectattr("zfsrc","defined") | list }}'
   loop_control:
     loop_var: onezfs
   tags: zfs
