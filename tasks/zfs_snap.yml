@@ -18,7 +18,7 @@
 - name: install zfs_snap crontab
   cron:
     name: 'zfs snap {{ zfs.zfsrc }}'
-    job: '{{ zfs_snap_script }} -c {{ zfs.snap_retention | default(zfs_snap_default_retention) }} {{ zfs.zfsrc }}'
+    job: '{{ zfs_snap_script }} -c {{ zfs.snap_retention | default(zfs_snap_default_retention) }} -r {{ zfs.zfsrc }}'
     minute: '{{ zfs.snap_minute | default(0) }}'
     hour: '{{ zfs.snap_hour | default("*") }}'
   with_items: '{{ (shares + group_shares) | selectattr("zfsrc","defined") | list }}'
