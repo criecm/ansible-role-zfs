@@ -10,5 +10,6 @@ nfsv4_acls: True
 
 zfs_pra_scripts: /root/zfs_pra
 zfs_sync_scripts: /root/zfs_sync
+zfs_snap_script: /root/zfs_snap_make
 
 group_shares: []

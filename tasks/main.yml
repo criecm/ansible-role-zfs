@@ -53,3 +53,7 @@
     loop_var: onezfs
   tags: zfs
   when: myzfs | length == 0 or myzfs == onezfs.name
+
+- name: zfs snapshots
+  include_tasks: zfs_snap.yml
+  tags: zfs,snap

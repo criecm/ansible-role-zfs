@@ -14,8 +14,8 @@ Filer with zfs !
 ## Role Variables
 
   * `shares`: list of `share` dicts
-  * `zfs_sync_vol` script if you need replication
   * `myzfs ('')` override to process only this share.name
+  * `zfs_snap_default_retention ('')` activate automatic snapshots - see `snap_retention`
 
 ### share variables
   * `zfsrc` (MANDATORY)
@@ -36,6 +36,23 @@ Filer with zfs !
     If you need to apply acls (only on create)
   * `nfsv4_acls (True)`
     acls are NFSv4, not POSIX
+
+#### if you want automated snapshots, add:
+  * `snap_retention (zfs_snap_default_retention)`
+    expression of what to keep: 6l12h7d3w3m1y means:
+      6 last snaps
+      12 last hourly snaps
+      7 last daily snaps
+      3 last weekly snaps
+      3 last monthly snaps
+      1 last yearly
+  * `snap_minute (0)`
+    at which minute(s) snapshots are taken - crontab syntax
+      `0`: each hour at h00
+      `5`: each hour at h05
+      `*/5`: each 5 minutes
+  * `snap_hour (*)`
+    at which hour (all by default) - crontab syntax
 
 #### if you want PRA replication (same filesystems, snapshots and properties on destination), add:
   * `pra_on ('')`
@@ -67,12 +84,13 @@ Filer with zfs !
   * `backup_hour` (`*`)
     hour field for crontab
 
-## replication
+## replication - global vars
   * [`zfs_sync_vol`](https://github.com/criecm/savscript/raw/master/lib/zfs_sync_vol) script for replication
     if not installed, the role will download it to /root/zfs_sync_vol on backup machine(s)
     (the role may be easily adapted to use another tool)
   * [`zfs_pra_scripts`](https://forge.centrale-marseille.fr/projects/sysutils/repository/zfs/revisions/master/show/pra) directory containing scripts for `zfs send | receive` over ssh, must pre-exist on source and destination
   * [`zfs_sync_scripts`](https://forge.centrale-marseille.fr/projects/sysutils/repository/zfs/revisions/master/show/sync) directory containing scripts for `zfs send | receive` over ssh using bookmarks on source
+  * [`zfs_snap_script`](https://github.com/criecm/zfstools) path to zfs_snap_make script (it needs zfs_clean_snap too)
 
 ## restauration
   - delete any share mountpoint to restore them

@@ -1,0 +1,28 @@
+---
+#    {{ inventory_hostname }} est l'hote d'origine
+#    {{ sync_host }} la machine de sauvegarde
+#
+# replication
+# needs zfs_sync_scripts script on sync host
+- name: check zfs_snap_script on host
+  stat:
+    path: '{{ zfs_snap_script }}'
+  register: statzfssnap
+
+- name: fail if scripts missing
+  fail:
+    msg: "Missing zfs_snap scripts"
+  when: not statzfssnap.stat.exists
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: install zfs_snap crontab
+  cron:
+    name: 'zfs snap {{ zfs.zfsrc }}'
+    job: '{{ zfs_snap_script }} -c {{ zfs.snap_retention | default(zfs_snap_default_retention) }} {{ zfs.zfsrc }}'
+    minute: '{{ zfs.snap_minute | default(0) }}'
+    hour: '{{ zfs.snap_hour | default("*") }}'
+  with_items: '{{ (shares + group_shares) | selectattr("zfsrc","defined") | list }}'
+  when: zfs.snap_retention | default(zfs_snap_default_retention) is match("^([0-9]+[lhdwmy])+$")
+  loop_control:
+    loop_var: zfs
+    label: '{{ zfs.zfsrc }}'
