@@ -39,6 +39,7 @@ Filer with zfs !
 
 #### if you want automated snapshots, add:
   * `snap_retention (zfs_snap_default_retention)`
+    `''` to disable snapshots for this share
     expression of what to keep: 6l12h7d3w3m1y means:
       6 last snaps
       12 last hourly snaps
