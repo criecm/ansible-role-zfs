@@ -9,35 +9,41 @@
     path: '{{ zfs_pra_scripts }}/sync_zfs_pra_from.sh'
   register: statzfsprasync
   delegate_to: '{{ pra_host }}'
+  tags: pra
 
 - name: check zfs_pra_scripts
   stat:
     path: '{{ zfs_pra_scripts }}/send_zfs_pra.sh'
   register: statzfsprasend
+  tags: pra
 
 - name: fail if scripts missing
   fail:
     msg: "Missing zfs_pra scripts on source or destination"
   when: not statzfsprasync.stat.exists or not statzfsprasend.stat.exists
   ignore_errors: "{{ ansible_check_mode }}"
+  tags: pra
 
 - name: ssh key
   command: 'ssh-keygen -t rsa -N "" -f ~/.ssh/id_ed25519_sync'
   args:
     creates: '~/.ssh/id_ed25519_sync'
   delegate_to: '{{ pra_host }}'
+  tags: pra
 
 - name: get ssh key
   command: 'cat ~/.ssh/id_ed25519_sync.pub'
   changed_when: False
   register: zfssh_key
   delegate_to: '{{ pra_host }}'
+  tags: pra
 
 - name: has server pra's ssh key ?
   command: 'fgrep {{ zfssh_key.stdout | regex_replace("ssh-[a-z0-9]* ([^ ]*)( .*)?$","\1") }} ~root/.ssh/authorized_keys'
   changed_when: False
   failed_when: False
   register: sshalready
+  tags: pra
 
 - name: put pra ssh key on host (tmp)
   authorized_key:
@@ -47,6 +53,7 @@
     key_options: 'command="{{ zfs_pra_scripts }}/send_zfs_pra.sh"'
   when: zfssh_key.stdout_lines | count > 0 and sshalready.rc > 0
 # and first_ssh.stdout_lines > 0
+  tags: pra
 
 - name: make first ssh connection from pra host (known_hosts + get client IP)
   command: 'ssh -i ~/.ssh/id_ed25519_sync -oStrictHostKeyChecking=no -oIdentitiesOnly=yes -oKbdInteractiveAuthentication=no -oUpdateHostKeys=yes {{ inventory_hostname
@@ -55,6 +62,7 @@
   changed_when: False
   failed_when: first_ssh.stdout_lines | count == 0
   delegate_to: '{{ pra_host }}'
+  tags: pra
 
 - name: get {{ pra_host }} FQDN
   shell: 'getent hosts {{ pra_host }} | cut -d" " -f1; hostname -f; hostname -s; echo {{ first_ssh.stdout_lines[0] | regex_replace(" .*","") }}'
@@ -63,6 +71,7 @@
   register: pra_host_fqdn
   delegate_to: '{{ pra_host }}'
   ignore_errors: "{{ ansible_check_mode }}"
+  tags: pra
 
 - name: put pra ssh key on host with 'from='
   authorized_key:
@@ -71,12 +80,14 @@
     state: present
     key_options: 'command="{{ zfs_pra_scripts }}/send_zfs_pra.sh",from="{{ pra_host_fqdn.stdout_lines | unique | join(",") }}"'
   when: zfssh_key.stdout_lines | count > 0 and first_ssh.stdout_lines | count > 0
+  tags: pra
 
 - name: show pra shares for {{ pra_host }}
   debug:
     msg: '{{ (shares + group_shares) | selectattr("zfsrc","defined") | selectattr("pra_on","defined")
     | selectattr("pra_on","search","^"+pra_host+":") | map(attribute="zfsrc") | join(",") }}'
   delegate_to: '{{ pra_host }}'
+  tags: pra
 
 - name: delete old sync cron
   cron: 
@@ -88,6 +99,7 @@
     label: '{{ pra_host }}:{{ zfs.zfsrc }}'
   register: oldcron
   delegate_to: '{{ pra_host }}'
+  tags: pra
 
 - name: install zfs_sync crontab
   cron:
@@ -101,3 +113,4 @@
     loop_var: zfs
     label: '{{ pra_host }}:{{ zfs.zfsrc }}'
   delegate_to: '{{ pra_host }}'
+  tags: pra
