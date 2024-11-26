@@ -17,12 +17,13 @@
 
 - name: install zfs_snap crontab
   cron:
-    name: 'zfs snap {{ zfs.zfsrc }}'
-    job: '{{ zfs_snap_script }} -c {{ zfs.snap_retention | default(zfs_snap_default_retention) }} -r {{ zfs.zfsrc }}'
-    minute: '{{ zfs.snap_minute | default(0) }}'
-    hour: '{{ zfs.snap_hour | default("*") }}'
+    name: 'zfs snap {{ snapzfs.zfsrc }}'
+    job: '{{ zfs_snap_script }} -c {{ snapzfs.snap_retention | default(zfs_snap_default_retention) }} -r {{ snapzfs.zfsrc }}'
+    minute: '{{ snapzfs.snap_minute | default(0) }}'
+    hour: '{{ snapzfs.snap_hour | default("*") }}'
   with_items: '{{ (shares + group_shares) | selectattr("zfsrc","defined") | list }}'
-  when: zfs.snap_retention | default(zfs_snap_default_retention) is match("^([0-9]+[lhdwmy])+$")
+  when: snapzfs.snap_retention | default(zfs_snap_default_retention) is match("([0-9]+[lhdwmy])+$")
   loop_control:
-    loop_var: zfs
-    label: '{{ zfs.zfsrc }}'
+    loop_var: snapzfs
+    label: '{{ snapzfs.zfsrc }}'
+  tags: snap
