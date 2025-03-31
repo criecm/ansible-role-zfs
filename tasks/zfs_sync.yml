@@ -104,7 +104,7 @@
   cron:
     name: 'sync {{ zfs.zfsrc }} from {{ inventory_hostname }}'
     job: '{{ zfs_sync_scripts }}/sync_zfs_from.sh ~/.ssh/id_ed25519_sync {{ ansible_hostname }}:{{ zfs.zfsrc }} {{ zfs.sync_on
-    | regex_replace("^[^:]+:","") }} {{ zfs.syncsnapkeep | default('') }}'
+    | regex_replace("^[^:]+:","") }} {{ zfs.syncsnapkeep | default("") }}'
     minute: '{{ zfs.sync_minute | default( 59 | random(seed=zfs.zfsrc)) }}'
     hour: '{{ zfs.sync_hour | default("*") }}'
   with_items: '{{ (shares + group_shares) | selectattr("zfsrc","defined") | selectattr("sync_on","defined") | selectattr("sync_on","search","^"+sync_host+":") | list }}'
