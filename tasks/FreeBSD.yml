@@ -11,3 +11,71 @@
     name: zfsd
     enabled: yes
     state: started
+  when: not "jails" in ansible_virtualization_tech_guest
+
+- name: periodic.conf.local
+  ansible.builtin.lineinfile:
+    dest: /usr/local/etc/periodic.conf.local
+    line: '{{ item }}'
+    regexp: '{{ item | regex_replace("=.*$","") }}'
+    create: True
+  loop:
+    - 'daily_status_zfs_enable="YES"'
+    - 'daily_scrub_zfs_enable="YES"'
+    - 'security_status_chkmounts_ignore="/\.zfs/snapshot/"'
+  when: not "jails" in ansible_virtualization_tech_guest
+
+- name: is trim supported/wanted ?
+  shell: "zpool status -t|grep '(.*trim.*)$' | grep -v unsupported"
+  loop: '{{ zpools.stdout_lines }}'
+  loop_control:
+    loop_var: pool
+  register: trimpools
+  changed_when: False
+  check_mode: False
+  failed_when: False
+  when: not "jails" in ansible_virtualization_tech_guest
+
+- name: get autotrim property
+  command: 'zpool get -p -Hovalue autotrim {{ pool }}'
+  register: getautotrim
+  loop: '{{ trimpools.results | selectattr("rc","eq",0) | map(attribute="pool") }}'
+  loop_control:
+    loop_var: pool
+  changed_when: False
+  check_mode: False
+
+- name: enable trim cron for trimmable pools
+  ansible.builtin.lineinfile:
+    dest: /usr/local/etc/periodic.conf.local
+    line: '{{ trimline }}'
+    regexp: '^{{ trimline | regex_replace("=.*$","=") }}'
+  loop:
+    - 'daily_trim_zfs_pools="{{ trimpools.results | selectattr("rc","eq",0) | map(attribute="pool") | join(" ") }}"'
+    - 'daily_trim_zfs_enable="YES"'
+  loop_control:
+    loop_var: trimline
+  when: trimpools.results | selectattr("rc","eq",0) | list | count > 0
+
+- name: set autotrim property
+  command: 'zpool set autotrim=on {{ pool }}'
+  register: setautotrim
+  loop: '{{ trimpools.results | selectattr("rc","eq",0) | map(attribute="pool") }}'
+  loop_control:
+    loop_var: pool
+  when: getautotrim.results | selectattr("pool","==",pool) | map(attribute="stdout") | first == "off"
+
+- name: get trimable caches
+  shell: "zpool status -t | awk '{if(!/^\\t/){next}if(/^\\t[^ ]/){incache=0;}if(/^\\tcache/){incache=1;next;}if(incache==0){next;}if(!/trim unsupported/){print $1}}'"
+  register: trimcache
+  changed_when: False
+  check_mode: False
+  when: not "jails" in ansible_virtualization_tech_guest and trimpools.results | selectattr("rc","eq",0) | list | count > 0
+
+- name: set l2arc trim sysctl
+  ansible.posix.sysctl:
+    name: vfs.zfs.l2arc.trim_ahead
+    value: '100'
+    sysctl_set: true
+    state: present
+  when: trimcache.stdout_lines | default([]) | count > 0

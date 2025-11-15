@@ -6,6 +6,7 @@ Create zfs filesystems / volumes
   * integrates with `criecm.samba`, `criecm.nfs_server` and `criecm.ctld`
   * replication (every hour by default)
   * restauration available ;)
+  * trim activation when available (FreeBSD only)
 
 ## Requirements
 

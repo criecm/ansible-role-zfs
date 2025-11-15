@@ -1,6 +1,13 @@
 ---
 # tasks file for criecm.zfs
-- name: OS vars
+- name: get zpools
+  command: 'zpool list -H -o name'
+  changed_when: False
+  check_mode: False
+  register: zpools
+  tags: vars,zfs
+
+- name: OS tasks
   include_tasks: '{{ includefile }}'
   with_first_found:
     - files:
