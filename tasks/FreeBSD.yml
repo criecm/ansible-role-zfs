@@ -13,9 +13,9 @@
     state: started
   when: not "jails" in ansible_virtualization_tech_guest
 
-- name: periodic.conf.local
+- name: periodic.conf
   ansible.builtin.lineinfile:
-    dest: /usr/local/etc/periodic.conf.local
+    dest: /usr/local/etc/periodic.conf
     line: '{{ item }}'
     regexp: '{{ item | regex_replace("=.*$","") }}'
     create: True
@@ -47,7 +47,7 @@
 
 - name: enable trim cron for trimmable pools
   ansible.builtin.lineinfile:
-    dest: /usr/local/etc/periodic.conf.local
+    dest: /usr/local/etc/periodic.conf
     line: '{{ trimline }}'
     regexp: '^{{ trimline | regex_replace("=.*$","=") }}'
   loop:
