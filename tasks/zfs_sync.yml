@@ -84,7 +84,7 @@
 - name: show sync shares for {{ sync_host }}
   debug:
     msg: '{{ (shares + group_shares) | selectattr("zfsrc","defined") | selectattr("sync_on","defined")
-    | selectattr("sync_on","search","^"+sync_host+":") | map(attribute="zfsrc") | join(",") }}'
+    | selectattr("sync_on","search",sync_host+":") | map(attribute="zfsrc") | join(",") }}'
   delegate_to: '{{ sync_host }}'
   tags: sync
 
@@ -92,7 +92,7 @@
   cron: 
     name: 'backup {{ zfs.zfsrc }} from {{ inventory_hostname }}'
     state: absent
-  with_items: '{{ (shares + group_shares) | selectattr("zfsrc","defined") | selectattr("sync_on","defined") | selectattr("sync_on","search","^"+sync_host+":") | list }}'
+  with_items: '{{ (shares + group_shares) | selectattr("zfsrc","defined") | selectattr("sync_on","defined") | selectattr("sync_on","search",sync_host+":") | list }}'
   loop_control:
     loop_var: zfs
     label: '{{ sync_host }}:{{ zfs.zfsrc }}'
@@ -103,11 +103,12 @@
 - name: install zfs_sync crontab
   cron:
     name: 'sync {{ zfs.zfsrc }} from {{ inventory_hostname }}'
-    job: '{{ zfs_sync_scripts }}/sync_zfs_from.sh ~/.ssh/id_ed25519_sync {{ ansible_hostname }}:{{ zfs.zfsrc }} {{ zfs.sync_on
+    job: '{{ zfs_sync_scripts }}/sync_zfs_from.sh ~/.ssh/id_ed25519_sync {{ ansible_hostname }}:{{ zfs.zfsrc }} {{ [ zfs.sync_on ]
+    | flatten | select("match",sync_host+":") | first
     | regex_replace("^[^:]+:","") }} {{ zfs.syncsnapkeep | default("") }}'
     minute: '{{ zfs.sync_minute | default( 59 | random(seed=zfs.zfsrc)) }}'
     hour: '{{ zfs.sync_hour | default("*") }}'
-  with_items: '{{ (shares + group_shares) | selectattr("zfsrc","defined") | selectattr("sync_on","defined") | selectattr("sync_on","search","^"+sync_host+":") | list }}'
+  with_items: '{{ (shares + group_shares) | selectattr("zfsrc","defined") | selectattr("sync_on","defined") | selectattr("sync_on","search",sync_host+":") | list }}'
   loop_control:
     loop_var: zfs
     label: '{{ sync_host }}:{{ zfs.zfsrc }}'
