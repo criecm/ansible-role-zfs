@@ -11,7 +11,7 @@
   include_tasks: '{{ includefile }}'
   with_first_found:
     - files:
-        - '{{ ansible_os_family }}.yml'
+        - '{{ ansible_facts["ansible_os_family"] }}.yml'
   loop_control:
     loop_var: includefile
   tags: vars,zfs

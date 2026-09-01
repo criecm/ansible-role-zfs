@@ -104,7 +104,7 @@
 - name: install zfs_sync crontab
   cron:
     name: 'pra {{ zfs.zfsrc }} from {{ inventory_hostname }}'
-    job: '{{ zfs_pra_scripts }}/sync_zfs_pra_from.sh ~/.ssh/id_ed25519_sync {{ ansible_hostname }}:{{ zfs.zfsrc }} {{ zfs.pra_on
+    job: '{{ zfs_pra_scripts }}/sync_zfs_pra_from.sh ~/.ssh/id_ed25519_sync {{ ansible_facts["ansible_hostname"] }}:{{ zfs.zfsrc }} {{ zfs.pra_on
     | regex_replace("^[^:]+:","") }} 36h15d8w12m1y'
     minute: '{{ zfs.pra_minute | default( 59 | random(seed=zfs.zfsrc)) }}'
     hour: '{{ zfs.pra_hour | default("*") }}'
