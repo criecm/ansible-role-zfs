@@ -11,7 +11,7 @@
     name: zfsd
     enabled: yes
     state: started
-  when: not "jails" in ansible_facts["ansible_virtualization_tech_guest"]
+  when: not "jails" in ansible_facts["virtualization_tech_guest"]
 
 - name: periodic.conf
   ansible.builtin.lineinfile:
@@ -23,7 +23,7 @@
     - 'daily_status_zfs_enable="YES"'
     - 'daily_scrub_zfs_enable="YES"'
     - 'security_status_chkmounts_ignore="/\.zfs/snapshot/"'
-  when: not "jails" in ansible_facts["ansible_virtualization_tech_guest"]
+  when: not "jails" in ansible_facts["virtualization_tech_guest"]
 
 - name: autotrim if needed
   block:
@@ -80,4 +80,4 @@
         sysctl_set: true
         state: present
       when: trimcache.stdout_lines | default([]) | count > 0
-  when: not "jails" in ansible_facts["ansible_virtualization_tech_guest"]
+  when: not "jails" in ansible_facts["virtualization_tech_guest"]

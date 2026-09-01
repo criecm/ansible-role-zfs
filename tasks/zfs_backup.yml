@@ -5,13 +5,13 @@
 # replication
 # needs zfs_sync_vol script on backup host
 - name: ssh key
-  command: 'ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa_{{ ansible_facts["ansible_hostname"] }}'
+  command: 'ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa_{{ ansible_facts["hostname"] }}'
   args:
-    creates: '~/.ssh/id_rsa_{{ ansible_facts["ansible_hostname"] }}'
+    creates: '~/.ssh/id_rsa_{{ ansible_facts["hostname"] }}'
   delegate_to: '{{ backup_host }}'
 
 - name: get ssh key
-  command: 'cat ~/.ssh/id_rsa_{{ ansible_facts["ansible_hostname"] }}.pub'
+  command: 'cat ~/.ssh/id_rsa_{{ ansible_facts["hostname"] }}.pub'
   changed_when: False
   register: zfssh_key
   delegate_to: '{{ backup_host }}'
@@ -27,13 +27,13 @@
     key: '{{ zfssh_key.stdout }}'
     user: root
     state: present
-#    key_options: 'from="{{ first_ssh.stdout_lines[0] | regex_replace("\.$","") }},{{ ansible_facts["ansible_hostname"] }}"'
+#    key_options: 'from="{{ first_ssh.stdout_lines[0] | regex_replace("\.$","") }},{{ ansible_facts["hostname"] }}"'
   when: zfssh_key.stdout_lines | count > 0 and sshalready.rc > 0
 # and first_ssh.stdout_lines > 0
 
 - name: make first ssh connection from backup (known_hosts + get client IP)
   command: |
-    ssh -i ~/.ssh/id_rsa_{{ ansible_facts["ansible_hostname"] }} -oStrictHostKeyChecking=no -oIdentitiesOnly=yes -oKbdInteractiveAuthentication=no -oUpdateHostKeys=yes {{ inventory_hostname }} 'echo ${SSH_CLIENT%% *}'
+    ssh -i ~/.ssh/id_rsa_{{ ansible_facts["hostname"] }} -oStrictHostKeyChecking=no -oIdentitiesOnly=yes -oKbdInteractiveAuthentication=no -oUpdateHostKeys=yes {{ inventory_hostname }} 'echo ${SSH_CLIENT%% *}'
   register: first_ssh
   changed_when: False
   failed_when: first_ssh.stdout_lines | count == 0
@@ -78,7 +78,7 @@
         content: |
           /var/log/zfs_sync_*.log 644 30  * @T00  JG
         mode: '0644'
-  when: ansible_facts["ansible_os_family"] == "FreeBSD"
+  when: ansible_facts["os_family"] == "FreeBSD"
   delegate_to: '{{ backup_host }}'
 
 - name: show backup shares for {{ backup_host }}
@@ -91,7 +91,7 @@
   cron:
     name: 'backup {{ zfs.zfsrc }} from {{ inventory_hostname }}'
     job: '{{ zfs_sync_vol | default("/root/zfs_sync_vol")
-    }} -k ~/.ssh/id_rsa_{{ ansible_facts["ansible_hostname"] }} -BrC -u {{ zfs.zfsrc }}@{{ ansible_facts["ansible_hostname"] }} {{ zfs.backup_on
+    }} -k ~/.ssh/id_rsa_{{ ansible_facts["hostname"] }} -BrC -u {{ zfs.zfsrc }}@{{ ansible_facts["ansible_hostname"] }} {{ zfs.backup_on
     | regex_replace("@.*$","") }} >> /var/log/zfs_sync_{{ zfs.zfsrc | regex_replace("/","_") }}.log'
     minute: '{{ zfs.backup_minute | default( 59 | random(seed=zfs.zfsrc)) }}'
     hour: '{{ zfs.backup_hour | default("*") }}'
